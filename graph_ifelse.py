@@ -1,21 +1,10 @@
 """
-graph.py — Supervisor Orchestrator
-Sprint 1: Implement AgentState, supervisor_node, route_decision và kết nối graph.
-
-Kiến trúc:
-    Input → Supervisor → [retrieval_worker | policy_tool_worker | human_review] → synthesis → Output
-
-Chạy thử:
-    python graph.py
+graph_simple.py — Supervisor Orchestrator (Option A: If/Else)
 """
-
 import json
 import os
 from datetime import datetime
 from typing import TypedDict, Literal, Optional
-
-# Uncomment nếu dùng LangGraph:
-from langgraph.graph import StateGraph, END
 
 # ─────────────────────────────────────────────
 # 1. Shared State — dữ liệu đi xuyên toàn graph
@@ -243,54 +232,38 @@ def build_graph():
     Lab này implement Option A theo mặc định.
     TODO Sprint 1: Có thể chuyển sang LangGraph nếu muốn.
     """
-    workflow = StateGraph(AgentState)
+    # Option A: Simple Python orchestrator
+    def run(state: AgentState) -> AgentState:
+        import time
+        start = time.time()
 
-    # 1. Thêm các nodes
-    workflow.add_node("supervisor", supervisor_node)
-    workflow.add_node("human_review", human_review_node)
-    workflow.add_node("policy_tool_worker", policy_tool_worker_node)
-    workflow.add_node("retrieval_worker", retrieval_worker_node)
-    workflow.add_node("synthesis_worker", synthesis_worker_node)
+        # Step 1: Supervisor decides route
+        state = supervisor_node(state)
 
-    # 2. Đặt điểm bắt đầu
-    workflow.set_entry_point("supervisor")
+        # Step 2: Route to appropriate worker
+        route = route_decision(state)
 
-    # 3. Supervisor quyết định worker tiếp theo
-    workflow.add_conditional_edges(
-        "supervisor",
-        route_decision,
-        {
-            "human_review": "human_review",
-            "policy_tool_worker": "policy_tool_worker",
-            "retrieval_worker": "retrieval_worker",
-        }
-    )
+        if route == "human_review":
+            state = human_review_node(state)
+            # After human approval, continue with retrieval
+            state = retrieval_worker_node(state)
+        elif route == "policy_tool_worker":
+            state = policy_tool_worker_node(state)
+            # Policy worker may need retrieval context first
+            if not state["retrieved_chunks"]:
+                state = retrieval_worker_node(state)
+        else:
+            # Default: retrieval_worker
+            state = retrieval_worker_node(state)
 
-    # 4. human_review xong thì chuyển sang retrieval_worker
-    workflow.add_edge("human_review", "retrieval_worker")
+        # Step 3: Always synthesize
+        state = synthesis_worker_node(state)
 
-    # 5. policy_tool_worker logic: có thể cần retrieval
-    def policy_route(state: AgentState) -> str:
-        if not state.get("retrieved_chunks"):
-            return "retrieval_worker"
-        return "synthesis_worker"
-        
-    workflow.add_conditional_edges(
-        "policy_tool_worker",
-        policy_route,
-        {
-            "retrieval_worker": "retrieval_worker",
-            "synthesis_worker": "synthesis_worker",
-        }
-    )
+        state["latency_ms"] = int((time.time() - start) * 1000)
+        state["history"].append(f"[graph] completed in {state['latency_ms']}ms")
+        return state
 
-    # 6. retrieval xong thì synthesis
-    workflow.add_edge("retrieval_worker", "synthesis_worker")
-
-    # 7. synthesis kết thúc graph
-    workflow.add_edge("synthesis_worker", END)
-
-    return workflow.compile()
+    return run
 
 
 # ─────────────────────────────────────────────
@@ -310,16 +283,8 @@ def run_graph(task: str) -> AgentState:
     Returns:
         AgentState với final_answer, trace, routing info, v.v.
     """
-    import time
-    start = time.time()
-    
     state = make_initial_state(task)
-    result = _graph.invoke(state)
-
-    # Tính lại latency tại đây
-    result["latency_ms"] = int((time.time() - start) * 1000)
-    result["history"].append(f"[graph] completed in {result['latency_ms']}ms")
-    
+    result = _graph(state)
     return result
 
 
@@ -338,7 +303,7 @@ def save_trace(state: AgentState, output_dir: str = "./artifacts/traces") -> str
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("Day 09 Lab — Supervisor-Worker Graph")
+    print("Day 09 Lab — Supervisor-Worker Graph (Simple If/Else Variant)")
     print("=" * 60)
 
     test_queries = [
@@ -361,4 +326,4 @@ if __name__ == "__main__":
         trace_file = save_trace(result)
         print(f"  Trace saved → {trace_file}")
 
-    print("\n✅ graph.py test complete. Implement TODO sections in Sprint 1 & 2.")
+    print("\n✅ graph_simple.py test complete. Implement TODO sections in Sprint 1 & 2.")
