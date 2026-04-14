@@ -4,8 +4,8 @@
 **Thành viên:**
 | Tên | Vai trò | Email |
 |-----|---------|-------|
-| Đặng Tiến Dũng | Supervisor Owner | 2A202600024 |
-| Phạm Hữu Hoàng Hiệp | Worker Owner | 2A202600415 |
+| Phạm Hữu Hoàng Hiệp | Supervisor Owner | 2A202600415 |
+| Đặng Tiến Dũng | Worker Owner | 2A202600024 |
 | Phạm Việt Cường | MCP Owner | 2A202600420 |
 | Phạm Trần Thanh Lâm | Trace & Docs Owner | 2A202600270 |
 
@@ -114,8 +114,8 @@ Khả năng modular hóa tuyệt vời. Khi thay đổi logic gọi MCP (Sửa c
 
 | Thành viên | Phần đã làm | Sprint |
 |------------|-------------|--------|
-| Đặng Tiến Dũng | Cài đặt `AgentState`, code LangGraph `graph.py` | Sprint 1 |
-| Phạm Hữu Hoàng Hiệp | Implementation code cho Worker `retrieval` & `synthesis` | Sprint 2 |
+| Phạm Hữu Hoàng Hiệp | Cài đặt `AgentState`, code LangGraph `graph.py` | Sprint 1 |
+| Đặng Tiến Dũng | Implementation code cho Worker `retrieval`, `policy_tool` & `synthesis` | Sprint 2 |
 | Phạm Việt Cường | Xây dựng server FastAPI MCP API (`mcp_server.py`) | Sprint 3 |
 | Phạm Trần Thanh Lâm | Setup Trace JSON output và Document templates | Sprint 4 |
 
