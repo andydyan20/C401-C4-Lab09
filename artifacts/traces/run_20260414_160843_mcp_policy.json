@@ -1,0 +1,108 @@
+{
+  "task": "Can you check ticket P1-LATEST status?",
+  "retrieved_chunks": [
+    {
+      "text": "SLA P1 escalation playbook",
+      "source": "sla_p1_2026.txt",
+      "score": 0.95
+    }
+  ],
+  "needs_tool": true,
+  "history": [
+    "[policy_tool_worker] called MCP get_ticket_info",
+    "[policy_tool_worker] policy_applies=True, exceptions=0"
+  ],
+  "workers_called": [
+    "policy_tool_worker"
+  ],
+  "worker_io_logs": [
+    {
+      "worker": "policy_tool_worker",
+      "input": {
+        "task": "Can you check ticket P1-LATEST status?",
+        "chunks_count": 1,
+        "needs_tool": true
+      },
+      "output": {
+        "policy_applies": true,
+        "exceptions_count": 0,
+        "mcp_calls": 1
+      },
+      "error": null
+    }
+  ],
+  "mcp_tools_used": [
+    {
+      "tool": "get_ticket_info",
+      "mcp_tool_called": "get_ticket_info",
+      "input": {
+        "ticket_id": "P1-LATEST"
+      },
+      "output": {
+        "ticket_id": "IT-9847",
+        "priority": "P1",
+        "title": "API Gateway down — toàn bộ người dùng không đăng nhập được",
+        "status": "in_progress",
+        "assignee": "nguyen.van.a@company.internal",
+        "created_at": "2026-04-13T22:47:00",
+        "sla_deadline": "2026-04-14T02:47:00",
+        "escalated": true,
+        "escalated_to": "senior_engineer_team",
+        "notifications_sent": [
+          "slack:#incident-p1",
+          "email:incident@company.internal",
+          "pagerduty:oncall"
+        ]
+      },
+      "mcp_result": {
+        "ticket_id": "IT-9847",
+        "priority": "P1",
+        "title": "API Gateway down — toàn bộ người dùng không đăng nhập được",
+        "status": "in_progress",
+        "assignee": "nguyen.van.a@company.internal",
+        "created_at": "2026-04-13T22:47:00",
+        "sla_deadline": "2026-04-14T02:47:00",
+        "escalated": true,
+        "escalated_to": "senior_engineer_team",
+        "notifications_sent": [
+          "slack:#incident-p1",
+          "email:incident@company.internal",
+          "pagerduty:oncall"
+        ]
+      },
+      "error": null,
+      "timestamp": "2026-04-14T16:08:43.100010"
+    }
+  ],
+  "mcp_tool_called": [
+    "get_ticket_info"
+  ],
+  "mcp_result": [
+    {
+      "ticket_id": "IT-9847",
+      "priority": "P1",
+      "title": "API Gateway down — toàn bộ người dùng không đăng nhập được",
+      "status": "in_progress",
+      "assignee": "nguyen.van.a@company.internal",
+      "created_at": "2026-04-13T22:47:00",
+      "sla_deadline": "2026-04-14T02:47:00",
+      "escalated": true,
+      "escalated_to": "senior_engineer_team",
+      "notifications_sent": [
+        "slack:#incident-p1",
+        "email:incident@company.internal",
+        "pagerduty:oncall"
+      ]
+    }
+  ],
+  "policy_result": {
+    "policy_applies": true,
+    "policy_name": "refund_policy_v4",
+    "exceptions_found": [],
+    "source": [
+      "sla_p1_2026.txt"
+    ],
+    "policy_version_note": "",
+    "explanation": "Analyzed via rule-based policy check. TODO: upgrade to LLM-based analysis."
+  }
+}

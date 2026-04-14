@@ -43,16 +43,20 @@ def _call_mcp_tool(tool_name: str, tool_input: dict) -> dict:
         result = dispatch_tool(tool_name, tool_input)
         return {
             "tool": tool_name,
+            "mcp_tool_called": tool_name,
             "input": tool_input,
             "output": result,
+            "mcp_result": result,
             "error": None,
             "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         return {
             "tool": tool_name,
+            "mcp_tool_called": tool_name,
             "input": tool_input,
             "output": None,
+            "mcp_result": None,
             "error": {"code": "MCP_CALL_FAILED", "reason": str(e)},
             "timestamp": datetime.now().isoformat(),
         }
@@ -144,6 +148,8 @@ def run(state: dict) -> dict:
     state.setdefault("workers_called", [])
     state.setdefault("history", [])
     state.setdefault("mcp_tools_used", [])
+    state.setdefault("mcp_tool_called", [])
+    state.setdefault("mcp_result", [])
 
     state["workers_called"].append(WORKER_NAME)
 
@@ -159,15 +165,21 @@ def run(state: dict) -> dict:
     }
 
     try:
-        # Step 1: Nếu chưa có chunks, gọi MCP search_kb
-        if not chunks and needs_tool:
-            mcp_result = _call_mcp_tool("search_kb", {"query": task, "top_k": 3})
-            state["mcp_tools_used"].append(mcp_result)
+        # Step 1: Nếu chưa có chunks, lấy evidence qua MCP search_kb (không query DB trực tiếp ở worker)
+        if needs_tool and not chunks:
+            kb_tool_result = _call_mcp_tool("search_kb", {"query": task, "top_k": 3})
+            state["mcp_tools_used"].append(kb_tool_result)
+            state["mcp_tool_called"].append(kb_tool_result.get("mcp_tool_called"))
+            state["mcp_result"].append(kb_tool_result.get("mcp_result"))
             state["history"].append(f"[{WORKER_NAME}] called MCP search_kb")
 
-            if mcp_result.get("output") and mcp_result["output"].get("chunks"):
-                chunks = mcp_result["output"]["chunks"]
+            kb_output = kb_tool_result.get("output") or {}
+            if kb_output.get("chunks"):
+                chunks = kb_output["chunks"]
                 state["retrieved_chunks"] = chunks
+                state["retrieved_sources"] = kb_output.get(
+                    "sources", list({c.get("source", "unknown") for c in chunks})
+                )
 
         # Step 2: Phân tích policy
         policy_result = analyze_policy(task, chunks)
@@ -175,8 +187,10 @@ def run(state: dict) -> dict:
 
         # Step 3: Nếu cần thêm info từ MCP (e.g., ticket status), gọi get_ticket_info
         if needs_tool and any(kw in task.lower() for kw in ["ticket", "p1", "jira"]):
-            mcp_result = _call_mcp_tool("get_ticket_info", {"ticket_id": "P1-LATEST"})
-            state["mcp_tools_used"].append(mcp_result)
+            ticket_tool_result = _call_mcp_tool("get_ticket_info", {"ticket_id": "P1-LATEST"})
+            state["mcp_tools_used"].append(ticket_tool_result)
+            state["mcp_tool_called"].append(ticket_tool_result.get("mcp_tool_called"))
+            state["mcp_result"].append(ticket_tool_result.get("mcp_result"))
             state["history"].append(f"[{WORKER_NAME}] called MCP get_ticket_info")
 
         worker_io["output"] = {

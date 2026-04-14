@@ -29,7 +29,6 @@ Chạy thử:
 """
 
 import os
-import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -139,20 +138,37 @@ def tool_search_kb(query: str, top_k: int = 3) -> dict:
     TODO Sprint 3: Kết nối với ChromaDB thực.
     Hiện tại: Delegate sang retrieval worker.
     """
+    safe_top_k = max(1, int(top_k))
     try:
-        # Tái dùng retrieval logic từ workers/retrieval.py
-        import sys
-        sys.path.insert(0, os.path.dirname(__file__))
-        from workers.retrieval import retrieve_dense
-        chunks = retrieve_dense(query, top_k=top_k)
-        sources = list({c["source"] for c in chunks})
-        return {
-            "chunks": chunks,
-            "sources": sources,
-            "total_found": len(chunks),
-        }
+        import chromadb
+
+        client = chromadb.PersistentClient(path="./chroma_db")
+        collection = client.get_collection("day09_docs")
+
+        raw = collection.query(
+            query_texts=[query],
+            n_results=safe_top_k,
+            include=["documents", "distances", "metadatas"],
+        )
+
+        chunks = []
+        docs = raw.get("documents", [[]])[0]
+        dists = raw.get("distances", [[]])[0]
+        metas = raw.get("metadatas", [[]])[0]
+        for doc, dist, meta in zip(docs, dists, metas):
+            metadata = meta or {}
+            chunks.append(
+                {
+                    "text": doc,
+                    "source": metadata.get("source", "unknown"),
+                    "score": round(1 - dist, 4),
+                    "metadata": metadata,
+                }
+            )
+
+        sources = sorted({c["source"] for c in chunks})
+        return {"chunks": chunks, "sources": sources, "total_found": len(chunks)}
     except Exception as e:
-        # Fallback: return mock data nếu ChromaDB chưa setup
         return {
             "chunks": [
                 {
