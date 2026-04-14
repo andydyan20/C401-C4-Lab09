@@ -103,7 +103,7 @@ from sentence_transformers import SentenceTransformer
 
 client = chromadb.PersistentClient(path='./chroma_db')
 col = client.get_or_create_collection('day09_docs')
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('AITeamVN/Vietnamese_Embedding')
 
 docs_dir = './data/docs'
 for fname in os.listdir(docs_dir):

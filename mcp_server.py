@@ -134,38 +134,12 @@ TOOL_SCHEMAS = {
 def tool_search_kb(query: str, top_k: int = 3) -> dict:
     """
     Tìm kiếm Knowledge Base bằng semantic search.
-
-    TODO Sprint 3: Kết nối với ChromaDB thực.
-    Hiện tại: Delegate sang retrieval worker.
+    Delegate sang retrieval worker.
     """
     safe_top_k = max(1, int(top_k))
     try:
-        import chromadb
-
-        client = chromadb.PersistentClient(path="./chroma_db")
-        collection = client.get_collection("day09_docs")
-
-        raw = collection.query(
-            query_texts=[query],
-            n_results=safe_top_k,
-            include=["documents", "distances", "metadatas"],
-        )
-
-        chunks = []
-        docs = raw.get("documents", [[]])[0]
-        dists = raw.get("distances", [[]])[0]
-        metas = raw.get("metadatas", [[]])[0]
-        for doc, dist, meta in zip(docs, dists, metas):
-            metadata = meta or {}
-            chunks.append(
-                {
-                    "text": doc,
-                    "source": metadata.get("source", "unknown"),
-                    "score": round(1 - dist, 4),
-                    "metadata": metadata,
-                }
-            )
-
+        from workers.retrieval import retrieve_dense
+        chunks = retrieve_dense(query, top_k=safe_top_k)
         sources = sorted({c["source"] for c in chunks})
         return {"chunks": chunks, "sources": sources, "total_found": len(chunks)}
     except Exception as e:

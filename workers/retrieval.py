@@ -35,23 +35,12 @@ def _get_embedding_fn():
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Option A: OpenAI (nếu có key thật)
-    openai_key = os.getenv("OPENAI_API_KEY")
-    if openai_key and not openai_key.startswith("sk-..."):
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=openai_key)
-            def embed_openai(text: str) -> list:
-                resp = client.embeddings.create(input=text, model="text-embedding-3-small")
-                return resp.data[0].embedding
-            return embed_openai
-        except Exception as e:
-            print(f"⚠️ OpenAI embedding initialization failed: {e}")
+    # Bỏ qua Option A (OpenAI) để tránh xung đột dimension (1536 vs 1024)
 
     # Option B: Sentence Transformers (Local)
     try:
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        model = SentenceTransformer("AITeamVN/Vietnamese_Embedding")
         def embed_st(text: str) -> list:
             return model.encode([text])[0].tolist()
         return embed_st
@@ -61,7 +50,7 @@ def _get_embedding_fn():
     # Fallback cho development (không dùng cho production)
     import random
     def embed_mock(text: str) -> list:
-        return [random.random() for _ in range(384)]
+        return [random.random() for _ in range(1024)]
     print("⚠️  CRITICAL: Using random embeddings as fallback. Retrieval will be inaccurate.")
     return embed_mock
 

@@ -59,20 +59,30 @@ def _call_llm(messages: list) -> str:
     # Option B: Gemini
     google_key = os.getenv("GOOGLE_API_KEY")
     if google_key and not google_key.startswith("AI..."):
-        try:
-            import google.generativeai as genai
-            genai.configure(api_key=google_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            
-            # Format messages for Gemini
-            combined_prompt = ""
-            for msg in messages:
-                combined_prompt += f"{msg['role'].upper()}: {msg['content']}\n\n"
-            
-            response = model.generate_content(combined_prompt)
-            return response.text
-        except Exception as e:
-            print(f"⚠️ Gemini Call Failed: {e}")
+        import time
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=google_key)
+                model = genai.GenerativeModel("gemini-2.5-flash")
+                
+                # Format messages for Gemini
+                combined_prompt = ""
+                for msg in messages:
+                    combined_prompt += f"{msg['role'].upper()}: {msg['content']}\n\n"
+                
+                response = model.generate_content(combined_prompt)
+                return response.text
+            except Exception as e:
+                err_msg = str(e)
+                if "429" in err_msg or "Quota" in err_msg:
+                    if attempt < max_retries - 1:
+                        print(f"⚠️ Gemini Call hit Quota 429. Sleeping 15s to retry ({attempt+1}/{max_retries})...")
+                        time.sleep(15)
+                        continue
+                print(f"⚠️ Gemini Call Failed: {e}")
+                break
 
     # Fallback: Trả về hướng dẫn nếu thiếu key
     return (
