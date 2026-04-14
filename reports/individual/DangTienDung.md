@@ -28,7 +28,8 @@ Trong các tình huống nhạy cảm về chính sách (như hoàn tiền), LLM
 Việc sử dụng rule-based đòi hỏi tôi phải cập nhật code khi chính sách công ty thay đổi (không linh hoạt bằng LLM). Tuy nhiên, đổi lại là sự an toàn tuyệt đối cho các nghiệp vụ tài chính.
 
 **Bằng chứng từ trace/code:**
-Trong `workers/policy_tool.py`, tôi đã triển khai bộ check ngoại lệ cụ thể:
+- https://github.com/andydyan20/C401-C4-Lab09/commit/9266b2c3110919033efb36c383f8034ce1450af5
+- Trong `workers/policy_tool.py`, tôi đã triển khai bộ check ngoại lệ cụ thể:
 ```python
 if any(kw in task_lower for kw in ["license key", "license", "subscription"]):
     exceptions_found.append({
