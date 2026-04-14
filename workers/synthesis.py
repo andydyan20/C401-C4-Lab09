@@ -34,35 +34,52 @@ Quy tắc nghiêm ngặt:
 def _call_llm(messages: list) -> str:
     """
     Gọi LLM để tổng hợp câu trả lời.
-    TODO Sprint 2: Implement với OpenAI hoặc Gemini.
+    Ưu tiên OpenAI nếu có key, sau đó đến Gemini.
     """
+    # Load env variables (re-check in case they were set)
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     # Option A: OpenAI
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.1,  # Low temperature để grounded
-            max_tokens=500,
-        )
-        return response.choices[0].message.content
-    except Exception:
-        pass
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key and not openai_key.startswith("sk-..."):
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0.1,
+                max_tokens=800,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"⚠️ OpenAI Call Failed: {e}")
 
     # Option B: Gemini
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        combined = "\n".join([m["content"] for m in messages])
-        response = model.generate_content(combined)
-        return response.text
-    except Exception:
-        pass
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key and not google_key.startswith("AI..."):
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=google_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            
+            # Format messages for Gemini
+            combined_prompt = ""
+            for msg in messages:
+                combined_prompt += f"{msg['role'].upper()}: {msg['content']}\n\n"
+            
+            response = model.generate_content(combined_prompt)
+            return response.text
+        except Exception as e:
+            print(f"⚠️ Gemini Call Failed: {e}")
 
-    # Fallback: trả về message báo lỗi (không hallucinate)
-    return "[SYNTHESIS ERROR] Không thể gọi LLM. Kiểm tra API key trong .env."
+    # Fallback: Trả về hướng dẫn nếu thiếu key
+    return (
+        "[MOCK ANSWER] Hệ thống hiện đang chạy ở chế độ offline (không có API Key).\n"
+        "Vui lòng điền OPENAI_API_KEY hoặc GOOGLE_API_KEY vào file .env để nhận câu trả lời thực tế từ LLM.\n\n"
+        f"Câu hỏi của bạn: {messages[-1]['content'][:100]}..."
+    )
 
 
 def _build_context(chunks: list, policy_result: dict) -> str:

@@ -174,12 +174,13 @@ còn lại → retrieval_worker
 3. Output có `answer`, `sources`, `confidence`
 
 **Kiểm tra từng worker độc lập:**
-```python
+```python -c "
 # Test retrieval worker độc lập
 from workers.retrieval import run as retrieval_run
-test_state = {"task": "SLA ticket P1 là bao lâu?", "history": []}
+test_state = {'task': 'SLA ticket P1 là bao lâu?', 'history': []}
 result = retrieval_run(test_state)
-print(result["retrieved_chunks"])
+print(result['retrieved_chunks']) 
+"
 ```
 
 **Definition of Done:**
